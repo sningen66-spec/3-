@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<script>
+/* GOOGLE_DRIVE_URL — адрес веб-приложения Google Apps Script (вставить между кавычками).
+   Как его получить — см. файл google_apps_script.gs и инструкцию к нему. */
+const GOOGLE_DRIVE_URL = 'https://script.google.com/macros/s/AKfycbxz-35icuvdi6UFliKQIGIu5wlNIOQRq3IbYcRbZVHx6lyg5brGXZgEfCPlYNBhJDwe9g/exec';
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Таблицы истинности — тренажёр</title>
+<style>
+:root{--bg:#f3f7fc;--ink:#1e293b;--muted:#5b6b82;--accent:#2563eb;--line:#c9d6e8;--ok:#dcfce7;--okb:#16a34a;--err:#fde68a;--errb:#d97706;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Times New Roman",Times,serif;font-size:20px;}
+header{background:linear-gradient(90deg,#dbeafe,#ede9fe);border-bottom:2px solid var(--line);padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{font-size:26px;margin:0;color:#1e3a8a}
+.who{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;align-items:center}
+.who label{font-size:17px;color:var(--muted)}
+.who input{font:inherit;font-size:19px;padding:6px 10px;border:2px solid var(--line);border-radius:8px;width:230px;background:#fff}
+.who select#cls{font:inherit;font-size:19px;padding:5px 8px;border:2px solid var(--line);border-radius:8px;background:#fff;min-width:80px}
+.who input:disabled,.who select:disabled{background:#eef2f7;color:var(--ink)}
+main{max-width:1150px;margin:0 auto;padding:16px}
+.f,.sym{font-family:"Cambria Math","Times New Roman","Segoe UI Symbol",serif}
+.ov{text-decoration:overline;text-decoration-thickness:2px}
+h2{color:#1e3a8a;margin:6px 0}
+.intro{font-size:20px;color:var(--muted);margin:4px 0 16px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.tile{background:#fff;border:2px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.tile:hover{border-color:var(--accent);box-shadow:0 3px 10px #2563eb22}
+.tile b{display:block;font-size:22px;color:#1e3a8a;margin-bottom:6px}
+.tile span{display:block;color:var(--muted);font-size:17px}
+.tile small{display:block;margin-top:8px;font-size:16px;color:#0f766e}
+.tile.ctrl{background:#fff7e0;border-color:#f5b942}
+.tile.help{background:#ecfdf5;border-color:#6ee7b7}
+.tile.note{background:#f5f3ff;border-color:#a78bfa}
+.tile.note b{color:#5b21b6}
+.tile .nb{display:block;width:fit-content;white-space:nowrap;margin-top:6px;font-size:16px;color:#5b21b6;background:#ede9fe;border-radius:8px;padding:2px 8px}
+.tile .nbicon,.nbicon{display:inline !important;font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif}
+.finbox{margin:18px 0 6px;padding:12px 16px;border:2px solid var(--accent);border-radius:14px;background:#eef4ff;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.finbox .msg{min-width:200px}
+.btn{font:inherit;font-size:20px;padding:9px 18px;border-radius:10px;border:2px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+.btn.sec{background:#fff;color:var(--accent)}
+.btn.mini{font-size:17px;padding:5px 12px}
+.btn:disabled{opacity:.45;cursor:default}
+.pagetop{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pagetop h2{flex:1}
+.step{font-size:18px;color:#92400e;background:#fff7e0;border:2px solid #f5b942;border-radius:8px;padding:4px 10px}
+.task{color:#1d4ed8;font-size:23px;text-align:center;margin:12px 0 6px}
+.subtask{color:var(--muted);font-size:18px;text-align:center;margin-bottom:12px}
+.level{display:flex;justify-content:center;gap:0;margin:6px 0 14px;flex-wrap:wrap}
+.level button{font:inherit;font-size:18px;padding:6px 14px;border:2px solid var(--accent);background:#fff;color:var(--accent);cursor:pointer}
+.level button:first-child{border-radius:10px 0 0 10px}
+.level button:last-child{border-radius:0 10px 10px 0}
+.level button+button{border-left:0}
+.level button.on{background:var(--accent);color:#fff}
+.foot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:18px 0 30px;padding-top:12px;border-top:2px dashed var(--line)}
+.msg{flex:1;font-size:19px;min-width:220px}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.card{background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 16px;margin:12px 0}
+.card.ok{border-color:var(--okb);background:#f0fdf4}
+.card.err{border-color:var(--errb);background:#fffbeb}
+.bigexpr{font-size:30px;margin:4px 0 10px}
+.fields{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center}
+.fields label{display:flex;align-items:center;gap:8px;font-size:20px}
+select.pick{font-family:"Times New Roman",serif;font-size:22px;font-weight:bold;color:#1e3a8a;padding:2px 4px;border:2px solid #9fb3cc;border-radius:8px;background:#fff;cursor:pointer;min-width:58px;vertical-align:middle}
+select.pick:disabled{opacity:1;color:#1e3a8a;cursor:default}
+select.pick.ok{border-color:var(--okb);background:var(--ok)}
+select.pick.err{border-color:var(--errb);background:var(--err)}
+select.pick.hd{font-family:"Cambria Math","Times New Roman",serif;font-size:19px;font-weight:normal;color:var(--ink);min-width:120px}
+select.pick.wide{font-family:"Cambria Math","Times New Roman",serif;font-size:20px;font-weight:normal;color:var(--ink);min-width:220px;max-width:100%}
+.twrap{overflow-x:auto;padding-bottom:4px}
+table.tt{border-collapse:collapse;margin:6px auto;font-size:22px;background:#fff}
+table.tt th,table.tt td{border:2px solid #9fb3cc;padding:3px 8px;min-width:46px;text-align:center}
+table.tt th{background:#eef4ff;font-family:"Cambria Math","Times New Roman",serif;font-weight:normal;white-space:nowrap}
+table.tt th.var{font-weight:bold}
+table.tt td.empty{background:#f1f5f9;color:#b6c2d2}
+table.tt td.res,table.tt th.res{background:#f5f3ff}
+table.tt td.sep,table.tt th.sep{border-left:4px solid #7c9cc9}
+.small{font-size:17px;color:var(--muted)}
+.qtitle{font-size:20px;margin-bottom:6px}
+.eqpair{font-size:28px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin:6px 0 10px}
+.eqpair .and{font-size:20px;color:var(--muted)}
+table.res{border-collapse:collapse;font-size:21px;margin:10px 0;background:#fff}
+table.res td,table.res th{border:2px solid var(--line);padding:6px 14px}
+table.res th{background:#eef4ff}
+.grade{font-size:30px;margin:14px 0}
+.grade b{font-size:44px;color:#1d4ed8}
+.overlay{position:fixed;inset:0;background:#1e293b55;display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:20px 10px;z-index:10}
+.overlay.show{display:flex}
+.hbox{background:#fff;border-radius:16px;max-width:1050px;width:100%;padding:18px 22px;position:relative}
+.hclose{position:sticky;top:0;float:right}
+.hbox h3{color:#1e3a8a;margin:18px 0 6px}
+.hbox ol li,.hbox ul li{margin:4px 0}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:8px 0}
+.hcard{border:2px solid var(--line);border-radius:12px;padding:8px 10px;background:#fbfdff;text-align:center}
+.hcard b{color:#1e3a8a}
+table.nota{border-collapse:collapse;font-size:20px}
+table.nota td,table.nota th{border:2px solid var(--line);padding:4px 12px}
+table.nota th{background:#eef4ff}
+.cnav{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0 4px}
+.cnav button{font:inherit;font-size:18px;padding:6px 14px;border:2px solid var(--accent);border-radius:10px;background:#fff;color:var(--accent);cursor:pointer}
+.cnav button.done{background:#ecfdf5;border-color:var(--okb);color:#15803d}
+.cnav button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.warn{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:#fff7e0;border:2px solid #f5b942;border-radius:12px;padding:12px 18px;font-size:20px;z-index:20;box-shadow:0 4px 16px #0002;max-width:92vw;display:none}
+.warn.show{display:block}
+.banner{background:#eef4ff;border:2px solid var(--accent);border-radius:14px;padding:12px 16px;margin:10px 0 16px}
+.who .btn.mini{white-space:nowrap}
+@media (max-width:600px){
+ body{font-size:18px}
+ .bigexpr{font-size:24px}
+ .who input{width:170px}
+ header h1{font-size:22px}
+ table.tt{font-size:19px}
+ table.tt th,table.tt td{padding:2px 4px;min-width:38px}
+ select.pick{font-size:19px;min-width:48px}
+}
+</style>
+</head>
+<body>
+<header>
+ <h1>Таблицы истинности</h1>
+ <div class="who">
+  <label for="fio">Фамилия, имя</label><input id="fio" autocomplete="off" spellcheck="false">
+  <label for="cls">Класс</label><select id="cls"><option value="">—</option><option>9А</option><option>9Б</option><option>9В</option></select>
+  <button class="btn mini" id="go">Начать / Продолжить</button>
+ </div>
+</header>
+<main></main>
+<div class="warn" id="warn"></div>
+<div class="overlay" id="help"><div class="hbox" id="hbox"></div></div>
+
+<script>
+/* ===== операции и обозначения ===== */
+const OPS={
+ not:{name:'инверсия'},
+ and:{name:'конъюнкция',p:2,f:(a,b)=>a&b},
+ or:{name:'дизъюнкция',p:3,f:(a,b)=>a|b},
+ xor:{name:'исключающее ИЛИ',p:3,f:(a,b)=>a^b},
+ imp:{name:'импликация',p:4,f:(a,b)=>(1-a)|b},
+ eq:{name:'эквивалентность',p:5,f:(a,b)=>a===b?1:0}
+};
+const BIN=['and','or','xor','imp','eq'];
+/* основная запись (как в презентации) и другие встречающиеся записи */
+const NOTA_STD={not:'¬',and:'∧',or:'∨',xor:'⊕',imp:'→',eq:'↔'};
+const NOTA_ALT=[
+ {not:'¬',and:'&',or:'∨',xor:'⊕',imp:'⇒',eq:'≡'},
+ {not:'¬',and:'·',or:'+',xor:'⊕',imp:'→',eq:'≡'},
+ {not:'¬',and:'∧',or:'∨',xor:'⊕',imp:'⇒',eq:'⇔'}
+];
+const ALT_SHARE=0.25;          // доля заданий с другой записью
+function makeNota(){return rnd()<ALT_SHARE?{s:pick(NOTA_ALT),ov:0.5}:{s:NOTA_STD,ov:0.15};}
+const CONTROL_PLAN=[
+ {id:'analysis',opt:{c:2,ns:[2,3]},pts:4},
+ {id:'frame',opt:{n:2,c:1},pts:4},
+ {id:'fill',opt:{n:3,c:1},pts:4},
+ {id:'full',opt:{n:3},pts:6},
+ {id:'work',opt:{c:4},pts:4}
+];
+
+/* ===== утилиты ===== */
+const $=s=>document.querySelector(s);
+let RNG=Math.random;
+const rnd=()=>RNG();
+const R=n=>Math.floor(rnd()*n);
+function hashStr(t){let x=1779033703^t.length;for(let i=0;i<t.length;i++){x=Math.imul(x^t.charCodeAt(i),3432918353);x=x<<13|x>>>19;}return x>>>0;}
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function withSeed(str,fn){const old=RNG;RNG=mulberry(hashStr(str));try{return fn();}finally{RNG=old;}}
+const pick=a=>a[R(a.length)];
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=R(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
+function h(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
+function mark(el,ok){if(!el)return;el.classList.remove('ok','err');el.classList.add(ok?'ok':'err');}
+const fmt=n=>String(Math.round(n*10)/10).replace('.',',');
+let cur=null,ctrl=null,REG=null;
+const VARIANTS=[{id:'v1',title:'1 вариант',short:'1 вар.'},{id:'v2',title:'2 вариант',short:'2 вар.'},{id:'hw',title:'Домашнее задание',short:'ДЗ'}];
+const LS='tt_progress_v2:';
+let student=null,P=null,dirty=false,loginNote='',saveT=null;
+
+/* ===== выражения ===== */
+function ev(n,env){if(n.t==='v')return env[n.name];if(n.t==='n')return 1-ev(n.a,env);return OPS[n.op].f(ev(n.a,env),ev(n.b,env));}
+function build(size,leaf){
+ let node;
+ if(size===0) node=leaf();
+ else{const k=R(size);node={t:'b',op:pick(BIN),a:build(k,leaf),b:build(size-1-k,leaf)};let g=0;
+  while(node.a.t==='v'&&node.b.t==='v'&&node.a.name===node.b.name&&g++<8)node.b=leaf();}
+ if(rnd()<(size===0?0.3:0.15)) node={t:'n',a:node};
+ return node;
+}
+function assignIds(e,overP){let id=0,cnt=0;(function w(n){if(n.t!=='v'){n.id=id++;cnt++;}if(n.t==='n'){n.ov=n.a.t==='v'&&rnd()<overP;w(n.a);}if(n.t==='b'){w(n.a);w(n.b);}})(e);return cnt;}
+function tok(n){
+ const wrap=a=>[{k:'('},...a,{k:')'}];
+ if(n.t==='v') return [{k:'v',s:n.name}];
+ if(n.t==='n'){if(n.a.t==='v'&&n.ov)return [{k:'ov',s:n.a.name,id:n.id}];const inner=tok(n.a);return [{k:'op',op:'not',id:n.id},...(n.a.t==='b'?wrap(inner):inner)];}
+ let L=tok(n.a),Rt=tok(n.b);const p=OPS[n.op].p;
+ if(n.a.t==='b'){const pa=OPS[n.a.op].p;if(pa>p||(pa===p&&(n.a.op!==n.op||n.op==='imp'||n.op==='eq')))L=wrap(L);}
+ if(n.b.t==='b'){if(OPS[n.b.op].p>=p)Rt=wrap(Rt);}
+ return [...L,{k:'op',op:n.op,id:n.id},...Rt];
+}
+function nest(tokens){let i=0;function lvl(){const items=[];while(i<tokens.length){const t=tokens[i++];if(t.k==='(')items.push({k:'g',items:lvl()});else if(t.k===')')return items;else items.push(t);}return items;}return lvl();}
+function levelOrder(items){
+ const res=[],done=new Set();
+ const isNot=j=>items[j]&&items[j].k==='op'&&items[j].op==='not'&&!done.has(j);
+ items.forEach((it,i)=>{if(it.k==='g'){res.push(...levelOrder(it.items));let j=i-1;while(isNot(j)){res.push(items[j].id);done.add(j);j--;}}});
+ items.forEach((it,i)=>{if(it.k==='v'||it.k==='ov'){if(it.k==='ov')res.push(it.id);let j=i-1;while(isNot(j)){res.push(items[j].id);done.add(j);j--;}}});
+ [['and'],['or','xor'],['imp'],['eq']].forEach(cl=>items.forEach(it=>{if(it.k==='op'&&cl.includes(it.op))res.push(it.id);}));
+ return res;
+}
+const canon=tokens=>levelOrder(nest(tokens));
+/* запись выражения: текст (для списков) и HTML (для заголовков) */
+function str(tokens,nota){return tokens.map(t=>t.k==='v'?t.s:t.k==='ov'?t.s+'̅':t.k==='op'?(t.op==='not'?nota.s.not:` ${nota.s[t.op]} `):t.k).join('');}
+function html(tokens,nota){return '<span class="f">'+tokens.map(t=>t.k==='v'?t.s:t.k==='ov'?`<span class="ov">${t.s}</span>`:t.k==='op'?(t.op==='not'?nota.s.not:` ${nota.s[t.op]} `):t.k).join('')+'</span>';}
+const VARS=['A','B','C'];
+function usedVars(e){const s=new Set();(function w(x){if(x.t==='v')s.add(x.name);if(x.a)w(x.a);if(x.b)w(x.b);})(e);return s;}
+function envs(vars){const n=vars.length,res=[];for(let r=0;r<(1<<n);r++){const e={};vars.forEach((v,j)=>e[v]=(r>>(n-1-j))&1);res.push(e);}return res;}
+const vec=(e,vars)=>envs(vars).map(en=>ev(e,en)).join('');
+/* разбор выражения на столбцы таблицы */
+function analyze(e,nota){
+ const nodes={};(function w(x){if(x.t!=='v')nodes[x.id]=x;if(x.a)w(x.a);if(x.b)w(x.b);})(e);
+ const order=canon(tok(e));
+ const cols=order.map(id=>{const x=nodes[id];const tk=tok(x);return {node:x,id,key:str(tk,nota),html:html(tk,nota)};});
+ if(new Set(cols.map(c=>c.key)).size!==cols.length) return null;
+ cols.forEach(c=>{c.deps=[c.node.a,c.node.b].filter(z=>z&&z.t!=='v').map(z=>cols.find(cc=>cc.id===z.id).key);});
+ return cols;
+}
+function genT(n,minOps,maxOps,nota){
+ const vars=VARS.slice(0,n);
+ for(let t=0;t<3000;t++){
+  const nt=nota||makeNota();
+  const e=build(1+R(maxOps),()=>({t:'v',name:pick(vars)}));
+  const cnt=assignIds(e,nt.ov);
+  if(cnt<minOps||cnt>maxOps) continue;
+  if(usedVars(e).size!==n) continue;
+  const v=vec(e,vars); if(!v.includes('0')||!v.includes('1')) continue;   // без тождественных выражений
+  const cols=analyze(e,nt); if(!cols) continue;
+  const tk=tok(e);
+  return {e,nota:nt,vars,cols,ops:cols.length,str:str(tk,nt),html:html(tk,nt)};
+ }
+}
+const opsRange=n=>n===2?[2,3]:[2,4];
+function genN(n){const [a,b]=opsRange(n);const t=genT(n,a,b);if(t)t.options=makeOptions(t);return t;}
+const levelN=()=>2+R(2);   // «Вперемешку»: 2 или 3 переменные
+/* мини-разбор для шаблонов равносильности */
+function parse(s){
+ const tk=s.replace(/\s+/g,'').split('');let i=0;
+ const SYM={'∧':'and','∨':'or','⊕':'xor','→':'imp','↔':'eq'};
+ const LV=[['eq'],['imp'],['or','xor'],['and']];
+ function lvl(k){if(k===LV.length)return un();let L=lvl(k+1);while(tk[i]&&LV[k].includes(SYM[tk[i]])){const op=SYM[tk[i++]];const Rr=lvl(k+1);L={t:'b',op,a:L,b:Rr};}return L;}
+ function un(){const c=tk[i++];if(c==='¬')return {t:'n',a:un()};if(c==='('){const e=lvl(0);i++;return e;}return {t:'v',name:c};}
+ return lvl(0);
+}
+function renameVars(e,map){if(e.t==='v')e.name=map[e.name];if(e.a)renameVars(e.a,map);if(e.b)renameVars(e.b,map);return e;}
+const EQ_PAIRS=[
+ ['A→B','¬A∨B'],['¬(A∧B)','¬A∨¬B'],['¬(A∨B)','¬A∧¬B'],['A↔B','¬(A⊕B)'],['A⊕B','A∧¬B∨¬A∧B'],
+ ['A→B','¬B→¬A'],['A∧(B∨C)','A∧B∨A∧C'],['A∨B∧C','(A∨B)∧(A∨C)'],['A↔B','(A→B)∧(B→A)'],['¬(A→B)','A∧¬B'],
+ ['A→B','B→A'],['¬(A∧B)','¬A∧¬B'],['¬(A∨B)','¬A∨¬B'],['A⊕B','A↔B'],['A→B','¬A→¬B'],
+ ['A∧(B∨C)','A∧B∨C'],['A→B','A∨¬B'],['¬(A↔B)','¬A↔¬B'],['A∨B→C','A∨(B→C)'],['¬A⊕B','¬(A⊕B)']
+];
+
+/* ===== элементы ввода ===== */
+function selCtl(item,opts,cls){
+ const s=h('select','pick'+(cls?' '+cls:''),'<option value="">–</option>'+opts.map(o=>`<option value="${o.v}">${o.t}</option>`).join(''));
+ s.onchange=()=>{item.ans=s.value===''?null:(item.num?+s.value:s.value);s.classList.remove('ok','err');const c=s.closest('.card');if(c)c.classList.remove('ok','err');onEdit();};
+ item.el=s;if(REG)REG.push(item);return s;
+}
+const BITS=[{v:0,t:'0'},{v:1,t:'1'}];
+function bitSel(item){item.num=true;return selCtl(item,BITS);}
+function numSel(item,max){item.num=true;const o=[];for(let i=1;i<=max;i++)o.push({v:i,t:String(i)});return selCtl(item,o);}
+function lockInputs(){document.querySelectorAll('main select.pick').forEach(s=>s.disabled=true);}
+
+/* ===== таблица ===== */
+/* mode: {vars:true — ученик заполняет наборы, heads:true — выбирает заголовки, vals:true — вычисляет значения} */
+function makeOptions(t){
+ const correct=new Set(t.cols.map(c=>c.key)),out=[];
+ let g=0;
+ while(out.length<2&&g++<300){
+  let key;
+  if(rnd()<0.5){
+   const bc=t.cols.filter(c=>c.node.t==='b');
+   if(!bc.length)continue;
+   const c=pick(bc);const cl={...c.node,op:pick(BIN.filter(o=>o!==c.node.op))};key=str(tok(cl),t.nota);
+  }else{
+   const o=genT(t.vars.length,1,3,t.nota);if(!o)continue;key=pick(o.cols).key;
+  }
+  if(!correct.has(key)&&!out.includes(key))out.push(key);
+ }
+ return shuffle([...t.cols.map(c=>c.key),...out]);
+}
+function tableEl(t,mode){
+ const n=t.vars.length,rows=1<<n,E=envs(t.vars),ui=t.ui={mode,vars:[],heads:[],vals:[]};
+ if(mode.heads&&!t.options)t.options=makeOptions(t);
+ const tb=h('table','tt');const hr=h('tr');
+ t.vars.forEach(v=>hr.appendChild(h('th','var',v)));
+ t.cols.forEach((c,i)=>{
+  const th=h('th',(i===0?'sep ':'')+(i===t.cols.length-1?'res':''));
+  if(mode.heads){const it={};ui.heads.push(it);th.appendChild(selCtl(it,t.options.map(k=>({v:k,t:k})),'hd'));}
+  else th.innerHTML=c.html;
+  hr.appendChild(th);
+ });
+ tb.appendChild(hr);
+ for(let r=0;r<rows;r++){
+  const tr=h('tr');ui.vars.push([]);ui.vals.push([]);
+  t.vars.forEach(v=>{const td=h('td');if(mode.vars){const it={};ui.vars[r].push(it);td.appendChild(bitSel(it));}else td.textContent=E[r][v];tr.appendChild(td);});
+  t.cols.forEach((c,i)=>{const td=h('td',(i===0?'sep ':'')+(i===t.cols.length-1?'res':''));
+   if(mode.vals){const it={};ui.vals[r].push(it);td.appendChild(bitSel(it));}else{td.classList.add('empty');td.textContent='·';}
+   tr.appendChild(td);});
+  tb.appendChild(tr);
+ }
+ const w=h('div','twrap');w.appendChild(tb);return w;
+}
+function checkTable(t){
+ const ui=t.ui,n=t.vars.length,E=envs(t.vars);let ok=0,tot=0;
+ /* наборы: засчитывается любой порядок строк, если каждый набор заполнен полностью и не повторяется;
+    значения в строке проверяются по тому набору, который записал ученик */
+ let rowEnv=E;
+ if(ui.mode.vars){
+  const seen=new Set();
+  rowEnv=ui.vars.map(row=>{
+   if(row.some(it=>it.ans==null)){row.forEach(it=>{mark(it.el,false);tot++;});return null;}
+   const key=row.map(it=>it.ans).join(''),g=!seen.has(key);seen.add(key);
+   row.forEach(it=>{mark(it.el,g);tot++;if(g)ok++;});
+   const env={};t.vars.forEach((v,j)=>env[v]=row[j].ans);return env;
+  });
+ }
+ let used=t.cols;
+ if(ui.mode.heads){
+  const pos={};ui.heads.forEach((hh,i)=>{if(hh.ans!=null&&pos[hh.ans]===undefined)pos[hh.ans]=i;});
+  used=ui.heads.map((hh,i)=>{
+   const col=t.cols.find(c=>c.key===hh.ans);
+   const g=!!col&&pos[hh.ans]===i&&col.deps.every(d=>pos[d]!==undefined&&pos[d]<i);
+   mark(hh.el,g);tot++;if(g)ok++;
+   return col||t.cols[i];
+  });
+ }
+ if(ui.mode.vals) ui.vals.forEach((row,r)=>row.forEach((it,i)=>{const g=rowEnv[r]!=null&&it.ans===ev(used[i].node,rowEnv[r]);mark(it.el,g);tot++;if(g)ok++;}));
+ return {ok,tot};
+}
+function unansTable(t){const ui=t.ui;let u=0;const c=a=>a.forEach(it=>{if(it.ans==null)u++;});if(ui.mode.vars)ui.vars.forEach(c);if(ui.mode.heads)c(ui.heads);if(ui.mode.vals)ui.vals.forEach(c);return u;}
+
+/* ===== анализ выражения (поля) ===== */
+const AN_FIELDS=[['vars','Переменных',3],['ops','Операций',8],['cols','Столбцов',11],['rows','Строк (наборов)',16]];
+function anCorrect(t){return {vars:t.vars.length,ops:t.ops,cols:t.vars.length+t.ops,rows:1<<t.vars.length};}
+function anFields(t){
+ const box=h('div','fields');t.an={};
+ AN_FIELDS.forEach(([k,label,max])=>{const it={};t.an[k]=it;const l=h('label','',label+':');l.appendChild(numSel(it,max));box.appendChild(l);});
+ return box;
+}
+function anCheck(t){const c=anCorrect(t);let ok=0;AN_FIELDS.forEach(([k])=>{const g=t.an[k].ans===c[k];mark(t.an[k].el,g);if(g)ok++;});return {ok,tot:AN_FIELDS.length};}
+const anUnans=t=>AN_FIELDS.filter(([k])=>t.an[k].ans==null).length;
+
+/* ===== модули ===== */
+const MODULES=[
+{id:'analysis',title:'Анализ выражения',desc:'Определить количество переменных, операций, столбцов и строк таблицы',level:true,
+ instr:()=>'Для каждого выражения определите количество переменных, логических операций, столбцов и строк таблицы истинности',
+ sub:()=>'Строки — это наборы значений переменных; строку заголовка не считаем',
+ gen(o={}){const c=o.c||3;return {items:Array.from({length:c},(_,i)=>genN(o.ns?o.ns[i%o.ns.length]:levelN()))};},
+ render(task,box){task.items.forEach((t,k)=>{const c=h('div','card');c.appendChild(h('div','bigexpr',`${k+1})&nbsp; ${t.html}`));c.appendChild(anFields(t));t.card=c;box.appendChild(c);});},
+ check(task){let ok=0,tot=0;task.items.forEach(t=>{const r=anCheck(t);ok+=r.ok;tot+=r.tot;mark(t.card,r.ok===r.tot);});return {ok,tot};},
+ unans:task=>task.items.reduce((a,t)=>a+anUnans(t),0)
+},
+{id:'frame',title:'Наборы и столбцы',desc:'Заполнить наборы значений переменных и выбрать заголовки столбцов',level:true,
+ instr:()=>'Заполните наборы значений переменных и выберите заголовки столбцов в порядке выполнения операций',
+ sub:()=>'Наборы удобно записывать в порядке двоичного счёта: 00, 01, 10, 11 или 000, 001, …, 111. Засчитывается и другой порядок, если все наборы разные',
+ gen(o={}){const n=o.n||levelN();const c=o.c||(n===2?2:1);return {items:Array.from({length:c},()=>genN(n))};},
+ render(task,box){task.items.forEach((t,k)=>{const c=h('div','card');c.appendChild(h('div','bigexpr',`${k+1})&nbsp; F = ${t.html}`));c.appendChild(tableEl(t,{vars:true,heads:true}));t.card=c;box.appendChild(c);});},
+ check(task){let ok=0,tot=0;task.items.forEach(t=>{const r=checkTable(t);ok+=r.ok;tot+=r.tot;mark(t.card,r.ok===r.tot);});return {ok,tot};},
+ unans:task=>task.items.reduce((a,t)=>a+unansTable(t),0)
+},
+{id:'fill',title:'Заполнение таблицы',desc:'Вычислить значения промежуточных столбцов и всего выражения',level:true,
+ instr:()=>'Заполните таблицу истинности: вычислите значения в каждом столбце',
+ sub:()=>'Каждый столбец вычисляется по столбцам, стоящим левее',
+ gen(o={}){const n=o.n||levelN();const c=o.c||(n===2?2:1);return {items:Array.from({length:c},()=>genN(n))};},
+ render(task,box){task.items.forEach((t,k)=>{const c=h('div','card');c.appendChild(h('div','bigexpr',`${k+1})&nbsp; F = ${t.html}`));c.appendChild(tableEl(t,{vals:true}));t.card=c;box.appendChild(c);});},
+ check(task){let ok=0,tot=0;task.items.forEach(t=>{const r=checkTable(t);ok+=r.ok;tot+=r.tot;mark(t.card,r.ok===r.tot);});return {ok,tot};},
+ unans:task=>task.items.reduce((a,t)=>a+unansTable(t),0)
+},
+{id:'full',title:'Построй таблицу сам',desc:'Полный алгоритм: размер таблицы, наборы, столбцы и значения',level:true,
+ instr:()=>'Постройте таблицу истинности по алгоритму: сначала определите её размер, затем заполните полностью',
+ sub:()=>'Шаг 1 — размер таблицы, шаг 2 — наборы, заголовки столбцов и значения',
+ gen(o={}){return {t:genN(o.n||levelN())};},
+ render(task,box){
+  const t=task.t,c=h('div','card');
+  c.appendChild(h('div','bigexpr',`F = ${t.html}`));
+  c.appendChild(h('div','qtitle','<b>Шаг 1.</b> Определите размер таблицы'));
+  c.appendChild(anFields(t));
+  const btn=h('button','btn mini','Построить таблицу');btn.style.marginTop='10px';c.appendChild(btn);
+  const area=h('div');c.appendChild(area);
+  const build=()=>{
+   AN_FIELDS.forEach(([k])=>t.an[k].el.disabled=true);btn.style.display='none';
+   area.appendChild(h('div','qtitle','<b>Шаг 2.</b> Заполните наборы, выберите заголовки столбцов в порядке выполнения операций и вычислите значения'));
+   REG=task.reg;area.appendChild(tableEl(t,{vars:true,heads:true,vals:true}));task.built=true;
+  };
+  task.restoreBuild=anRes=>{if(anRes)task.anRes=anRes;build();};
+  btn.onclick=()=>{
+   const r=anCheck(t);
+   if(!task.anRes)task.anRes=r;           // первая попытка идёт в зачёт
+   if(r.ok<r.tot&&!cur.control){$('#msg').innerHTML='Размер таблицы определён неверно — ошибки выделены жёлтым. Исправьте и снова нажмите «Построить таблицу».';return;}
+   build();
+   $('#msg').innerHTML=cur.control?'':'Верно! Теперь заполните таблицу.';
+   onEdit();
+  };
+  task.card=c;box.appendChild(c);
+ },
+ check(task){
+  const t=task.t;const a=task.anRes||anCheck(t);let ok=a.ok,tot=a.tot;
+  if(task.built){const r=checkTable(t);ok+=r.ok;tot+=r.tot;}
+  else{const n=t.vars.length;tot+=(1<<n)*(n+t.ops)+t.ops;}
+  mark(task.card,ok===tot);return {ok,tot};
+ },
+ unans:task=>task.built?unansTable(task.t):1,
+ beforeCheck(task){if(!task.built){$('#msg').innerHTML='Сначала выполните шаг 1 и нажмите «Построить таблицу».';return false;}return true;}
+},
+{id:'work',title:'Работа с таблицей',notebook:true,desc:'Число истинных наборов, выражение по таблице, равносильность',level:true,
+ instr:()=>'Ответьте на вопросы. Для ответа постройте таблицы истинности в тетради',
+ sub:()=>'Равносильные выражения — выражения, у которых совпадают таблицы истинности',
+ gen(o={}){
+  const c=o.c||4;const types=shuffle(['count','choose','equiv',pick(['count','choose','equiv'])]);while(types.length<c)types.push(pick(['count','choose','equiv']));
+  return {items:types.slice(0,c).map(tp=>{
+   if(tp==='count'){const t=genN(o.n||levelN());return {tp,t,correct:vec(t.e,t.vars).split('').filter(x=>x==='1').length};}
+   if(tp==='choose'){
+    const n=o.n||levelN(),t=genN(n),opts=[t],vs=new Set([vec(t.e,t.vars)]);let g=0;
+    while(opts.length<3&&g++<500){const d=genT(n,...opsRange(n),t.nota);if(!d)continue;const v=vec(d.e,d.vars);if(vs.has(v))continue;vs.add(v);opts.push(d);}
+    return {tp,t,opts:shuffle(opts),correct:t.str};
+   }
+   const [s1,s2]=pick(EQ_PAIRS),nota=makeNota();
+   const perm=shuffle(VARS.slice());const map={A:perm[0],B:perm[1],C:perm[2]};
+   const e1=renameVars(parse(s1),map),e2=renameVars(parse(s2),map);assignIds(e1,nota.ov);assignIds(e2,nota.ov);
+   if(rnd()<0.5){const sw=[e1,e2];return mkEq(sw[1],sw[0],nota);}
+   return mkEq(e1,e2,nota);
+  })};
+ },
+ render(task,box){
+  task.items.forEach((it,k)=>{
+   const c=h('div','card');it.card=c;
+   if(it.tp==='count'){
+    c.appendChild(h('div','qtitle',`${k+1}) На скольких наборах значений переменных выражение истинно?`));
+    c.appendChild(h('div','bigexpr',it.t.html));
+    const l=h('label','fields','Ответ:&nbsp;');const o=[];for(let i=0;i<=(1<<it.t.vars.length);i++)o.push({v:i,t:String(i)});it.num=true;l.appendChild(selCtl(it,o));c.appendChild(l);
+   }else if(it.tp==='choose'){
+    c.appendChild(h('div','qtitle',`${k+1}) Какому выражению соответствует таблица истинности?`));
+    const t=it.t,E=envs(t.vars);
+    const tb=h('table','tt');tb.innerHTML='<tr>'+t.vars.map(v=>`<th class="var">${v}</th>`).join('')+'<th class="sep res">F</th></tr>'+E.map(en=>'<tr>'+t.vars.map(v=>`<td>${en[v]}</td>`).join('')+`<td class="sep res"><b>${ev(t.e,en)}</b></td></tr>`).join('');
+    const w=h('div','twrap');w.appendChild(tb);c.appendChild(w);
+    const l=h('div','');l.style.textAlign='center';l.appendChild(selCtl(it,it.opts.map(o=>({v:o.str,t:o.str})),'wide'));c.appendChild(l);
+   }else{
+    c.appendChild(h('div','qtitle',`${k+1}) Равносильны ли выражения?`));
+    c.appendChild(h('div','eqpair',`${it.h1}<span class="and">и</span>${it.h2}`));
+    const l=h('label','fields','Ответ:&nbsp;');l.appendChild(selCtl(it,[{v:'да',t:'да'},{v:'нет',t:'нет'}],'wide'));c.appendChild(l);
+   }
+   box.appendChild(c);
+  });
+ },
+ check(task){let ok=0;task.items.forEach(it=>{const g=it.ans===it.correct;mark(it.el,g);mark(it.card,g);if(g)ok++;});return {ok,tot:task.items.length};},
+ unans:task=>task.items.filter(it=>it.ans==null).length
+}
+];
+function mkEq(e1,e2,nota){const vars=[...new Set([...usedVars(e1),...usedVars(e2)])].sort();return {tp:'equiv',h1:html(tok(e1),nota),h2:html(tok(e2),nota),correct:vec(e1,vars)===vec(e2,vars)?'да':'нет'};}
+MODULES.forEach((m,i)=>{m.title=`${i+1}. ${m.title}`;});
+const MOD=Object.fromEntries(MODULES.map(m=>[m.id,m]));
+
+/* ===== экраны ===== */
+function modStatus(m){
+ return VARIANTS.map(v=>{const e=P.mods[m.id]&&P.mods[m.id][v.id];let t='—';
+  if(e){if(e.chk)t=e.chk.ok===e.chk.tot?'✓':`${e.chk.ok}/${e.chk.tot}`;else if(e.a.some(x=>x!=null))t='начато';}
+  return `${v.short}: ${t}`;}).join(' · ');
+}
+function showMenu(){
+ persist();
+ cur=null;ctrl=null;setWhoLocked(!!student);const main=$('main');main.innerHTML='';
+ main.appendChild(h('h2','','Выберите задание'));
+ const g=h('div','tiles');
+ const hl=h('button','tile help','<b>Справка</b><span>Алгоритм построения таблицы истинности, пример, обозначения операций</span>');hl.onclick=openHelp;g.appendChild(hl);
+ if(!student){
+  main.appendChild(h('div','banner','Введите фамилию, имя и класс вверху страницы и нажмите <b>«Начать / Продолжить»</b>. Если вы уже работали, ваши прежние ответы загрузятся, и вы продолжите с того же места.'));
+  main.appendChild(g);return;
+ }
+ if(loginNote)main.appendChild(h('div','banner',loginNote));
+ main.appendChild(h('div','intro','В каждом разделе есть три набора заданий: «1 вариант», «2 вариант» и «Домашнее задание». Ответы сохраняются автоматически. Ошибки после проверки подсвечиваются жёлтым — исправьте их и проверьте снова.'));
+ MODULES.forEach(m=>{
+  const t=h('button','tile'+(m.notebook?' note':''),`<b>${m.title}${m.notebook?' <span class="nbicon">📓</span>':''}</b><span>${m.desc}</span>${m.notebook?'<span class="nb"><span class="nbicon">📓</span> Понадобится тетрадь</span>':''}<small>${modStatus(m)}</small>`);
+  t.onclick=()=>openModule(m.id,'v1');g.appendChild(t);});
+ const lastC=P.controls[P.controls.length-1];
+ const c=h('button','tile ctrl',`<b>Контрольная работа</b><span>Все виды заданий, между ними можно переходить; проверка в конце, оценка по 10-балльной шкале</span>${lastC?`<small>Последняя оценка: ${lastC.grade} из 10</small>`:''}`);c.onclick=startControl;g.appendChild(c);
+ main.appendChild(g);
+ const fb=h('div','finbox');
+ fb.appendChild(h('div','msg','<b>Закончили работу?</b> Нажмите «Завершить работу» — все результаты отправятся учителю. Позже можно войти снова под своим именем и продолжить.'));
+ const fin=h('button','btn','Завершить работу');fin.onclick=finishWork;fb.appendChild(fin);main.appendChild(fb);
+ const ex=h('button','btn sec','Сохранить результаты в файл (.txt)');ex.style.marginTop='6px';ex.onclick=exportTraining;main.appendChild(ex);
+ if(dirty)syncNow(false);
+}
+function openModule(id,variant){
+ if(!student){alert('Сначала введите фамилию, имя, класс и нажмите «Начать / Продолжить».');return;}
+ persist();loginNote='';
+ const m=MOD[id];variant=variant||'v1';
+ /* задания варианта одинаковы у всех учеников и при каждом входе: они определяются номером раздела и варианта */
+ const task=withSeed(`tt2|${id}|${variant}`,()=>m.gen());
+ cur={mod:m,task,variant,control:false,locked:false};
+ renderPage();
+ const saved=P.mods[id]&&P.mods[id][variant];
+ if(saved){restoreTask(task,saved);if(saved.chk)refreshCheck();}
+}
+/* ===== сохранение и восстановление ответов ===== */
+function renderTask(m,task,box){task.reg=[];REG=task.reg;m.render(task,box);}
+function serTask(task){return {a:(task.reg||[]).map(it=>it.ans==null?null:it.ans),built:!!task.built,anRes:task.anRes||null,chk:task.chk||null};}
+function restoreTask(task,saved){
+ if(saved.anRes)task.anRes=saved.anRes;
+ if(saved.built&&task.restoreBuild)task.restoreBuild(saved.anRes);
+ (task.reg||[]).forEach((it,i)=>{const v=saved.a[i];if(v!=null){it.ans=v;if(it.el)it.el.value=String(v);}});
+}
+function saveCur(){
+ if(!P||!cur||cur.control||!cur.task||!cur.mod)return;
+ const id=cur.mod.id,v=cur.variant,x=serTask(cur.task),old=P.mods[id]&&P.mods[id][v];
+ if(!old&&!(x.a.some(z=>z!=null)||x.built||x.chk))return;
+ if(old&&JSON.stringify({a:old.a,built:old.built,anRes:old.anRes,chk:old.chk})===JSON.stringify(x))return;
+ (P.mods[id]=P.mods[id]||{})[v]={...x,t:Date.now()};dirty=true;
+}
+function persist(){
+ if(!student||!P)return;
+ saveCur();P.updated=Date.now();
+ try{localStorage.setItem(LS+student.key,JSON.stringify(P));}catch(e){}
+}
+function onEdit(){if(!student||(cur&&cur.control))return;clearTimeout(saveT);saveT=setTimeout(persist,500);}
+function renderPage(){
+ const m=cur.mod,main=$('main');main.innerHTML='';
+ const top=h('div','pagetop');
+ if(!cur.control){const back=h('button','btn sec','← Меню');back.onclick=showMenu;top.appendChild(back);}
+ else top.appendChild(h('div','step',`Контрольная работа · задание ${ctrl.i+1} из ${CONTROL_PLAN.length}`));
+ top.appendChild(h('h2','',m.title+(m.notebook?' <span class="nbicon">📓</span>':'')));
+ if(!cur.control){const hb=h('button','btn sec','Справка');hb.onclick=openHelp;top.appendChild(hb);}
+ main.appendChild(top);
+ if(!cur.control){
+  const lv=h('div','level');
+  VARIANTS.forEach(v=>{const b=h('button',cur.variant===v.id?'on':'',v.title);b.onclick=()=>{if(cur.variant!==v.id)openModule(m.id,v.id);};lv.appendChild(b);});
+  main.appendChild(lv);
+ }
+ main.appendChild(h('div','task',m.instr(cur.task)));
+ if(m.sub)main.appendChild(h('div','subtask',m.sub(cur.task)));
+ const box=h('div','box');renderTask(m,cur.task,box);main.appendChild(box);
+ const foot=h('div','foot');const msg=h('div','msg','');msg.id='msg';foot.appendChild(msg);
+ const bt=h('div','btns');
+ const chk=h('button','btn','Проверить');chk.id='chk';chk.onclick=doCheck;bt.appendChild(chk);
+ foot.appendChild(bt);main.appendChild(foot);
+ window.scrollTo(0,0);
+}
+function showCheckMsg(r){const msg=$('#msg');if(!msg)return;msg.innerHTML=r.ok===r.tot?'<b style="color:#15803d">Всё верно! Молодец!</b>':
+  `Верно: <b>${r.ok} из ${r.tot}</b>. Ошибки выделены жёлтым — исправьте их и снова нажмите «Проверить».`;}
+function doCheck(){
+ const m=cur.mod;
+ if(m.beforeCheck&&!m.beforeCheck(cur.task))return;
+ const r=m.check(cur.task);cur.task.chk={ok:r.ok,tot:r.tot};showCheckMsg(r);
+ persist();syncNow(false);
+}
+function refreshCheck(){   // после возврата в раздел снова показать результат прошлой проверки
+ const m=cur.mod;if(m.beforeCheck&&!m.beforeCheck(cur.task))return;
+ const r=m.check(cur.task);cur.task.chk={ok:r.ok,tot:r.tot};showCheckMsg(r);
+}
+/* ===== контрольная и защита ===== */
+const fio=()=>$('#fio').value.trim(),cls=()=>$('#cls').value;
+const inControl=()=>!!(ctrl&&!ctrl.done);
+function setWhoLocked(v){$('#fio').disabled=v;$('#cls').disabled=v;$('#go').style.display=v?'none':'';}
+function warn(text){const w=$('#warn');w.innerHTML=text+'<div style="text-align:right;margin-top:8px"><button class="btn mini" onclick="this.closest(\'.warn\').classList.remove(\'show\')">Понятно</button></div>';w.classList.add('show');}
+/* уходы со страницы: количество, моменты и время вне окна */
+const fmtDur=ms=>{const s=Math.round(ms/1000),m=Math.floor(s/60);return m?`${m} мин ${String(s%60).padStart(2,'0')} с`:`${s} с`;};
+const hhmmss=t=>new Date(t).toLocaleTimeString('ru-RU');
+function goOut(){if(!inControl()||ctrl.outAt||ctrl.dialog)return;ctrl.outAt=Date.now();ctrl.leaves++;}
+function goIn(){
+ if(!inControl()||!ctrl.outAt)return;
+ const d=Date.now()-ctrl.outAt;ctrl.away+=d;ctrl.log.push(`${hhmmss(ctrl.outAt)} (${fmtDur(d)})`);ctrl.outAt=0;
+ warn(`Во время контрольной работы нельзя уходить со страницы.<br>Уход отмечен в результате (всего: <b>${ctrl.leaves}</b>, вне окна: <b>${fmtDur(ctrl.away)}</b>).`);
+}
+function closeOut(){if(ctrl&&ctrl.outAt){const d=Date.now()-ctrl.outAt;ctrl.away+=d;ctrl.log.push(`${hhmmss(ctrl.outAt)} (${fmtDur(d)})`);ctrl.outAt=0;}}
+function ask(text){if(ctrl)ctrl.dialog=true;const r=confirm(text);if(ctrl)setTimeout(()=>{ctrl.dialog=false;},300);return r;}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)goOut();else if(document.hasFocus())goIn();});
+window.addEventListener('blur',goOut);
+window.addEventListener('focus',()=>{if(!document.hidden)goIn();});
+window.addEventListener('beforeunload',e=>{if(inControl()){e.preventDefault();e.returnValue='';}});
+document.addEventListener('contextmenu',e=>{if(inControl())e.preventDefault();});
+document.addEventListener('keydown',e=>{if(inControl()&&(e.key==='F5'||((e.ctrlKey||e.metaKey)&&['r','R','к','К','u','U','г','Г','p','P','з','З'].includes(e.key))))e.preventDefault();});
+function startControl(){
+ if(!student){alert('Перед контрольной работой введите фамилию, имя, класс и нажмите «Начать / Продолжить».');return;}
+ if(!confirm('Начать контрольную работу?\n\n• Справка во время работы недоступна.\n• Уходить со страницы нельзя — каждый уход отмечается в результате.\n• Между заданиями можно переходить и исправлять ответы.\n• Когда всё сделаете, нажмите «Отправить учителю» — после этого изменить ответы будет нельзя.\n• Приготовьте тетрадь для черновых записей.'))return;
+ closeHelp();ctrl={i:0,res:[],tasks:CONTROL_PLAN.map(p=>({plan:p,mod:MOD[p.id],task:MOD[p.id].gen(p.opt)})),leaves:0,away:0,outAt:0,log:[],dialog:false,start:Date.now(),id:Date.now().toString(36)+Math.random().toString(36).slice(2,8)};setWhoLocked(true);renderControl();
+}
+/* все задания создаются сразу, ответы сохраняются при переходах */
+function renderControl(){
+ cur={control:true};const main=$('main');main.innerHTML='';
+ const top=h('div','pagetop');top.appendChild(h('div','step','Контрольная работа'));top.appendChild(h('h2','',`${esc(fio())}, ${esc(cls())}`));main.appendChild(top);
+ const nav=h('div','cnav');nav.id='cnav';
+ ctrl.tasks.forEach((x,k)=>{const b=h('button','','');b.title=x.mod.title;b.onclick=()=>showCtrlTask(k);nav.appendChild(b);});
+ main.appendChild(nav);
+ ctrl.tasks.forEach(x=>{
+  const sec=h('div','');sec.style.display='none';
+  sec.appendChild(h('h2','',x.mod.title+(x.mod.notebook?' <span class="nbicon">📓</span>':'')));
+  sec.appendChild(h('div','task',x.mod.instr(x.task)));
+  if(x.mod.sub)sec.appendChild(h('div','subtask',x.mod.sub(x.task)));
+  const box=h('div','box');renderTask(x.mod,x.task,box);sec.appendChild(box);
+  x.sec=sec;main.appendChild(sec);
+ });
+ const foot=h('div','foot');const msg=h('div','msg','');msg.id='msg';foot.appendChild(msg);
+ const bt=h('div','btns');
+ const pv=h('button','btn sec','← Назад');pv.id='cprev';pv.onclick=()=>showCtrlTask(ctrl.i-1);bt.appendChild(pv);
+ const nx=h('button','btn sec','Далее →');nx.id='cnext';nx.onclick=()=>showCtrlTask(ctrl.i+1);bt.appendChild(nx);
+ foot.appendChild(bt);main.appendChild(foot);
+ const fb=h('div','finbox');fb.id='finbox';
+ fb.appendChild(h('div','msg','<b>Это последнее задание.</b> Проверьте, что все задания отмечены ✓, и отправьте работу учителю.'));
+ const fin=h('button','btn','Отправить учителю');fin.onclick=finishControl;fb.appendChild(fin);
+ main.insertBefore(fb,foot);
+ showCtrlTask(0);
+}
+function showCtrlTask(k){
+ if(k<0||k>=ctrl.tasks.length)return;ctrl.i=k;
+ ctrl.tasks.forEach((x,j)=>x.sec.style.display=j===k?'':'none');
+ const last=k===ctrl.tasks.length-1;$('#cprev').disabled=k===0;$('#cnext').style.display=last?'none':'';$('#finbox').style.display=last?'':'none';
+ $('#msg').innerHTML='';updateNav();window.scrollTo(0,0);
+}
+/* задание, в котором заполнены все ответы, отмечается зелёным */
+function updateNav(){
+ if(!inControl()||!$('#cnav'))return;
+ [...$('#cnav').children].forEach((b,k)=>{const x=ctrl.tasks[k];const u=x.mod.unans(x.task);
+  b.className=(k===ctrl.i?'on':'')+(u===0?' done':'');b.innerHTML=`Задание ${k+1}`+(x.mod.notebook?' <span class="nbicon">📓</span>':'')+(u===0?' ✓':'');});
+}
+document.addEventListener('change',updateNav);
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('main .btn.mini'))setTimeout(updateNav,0);});
+function finishControl(){
+ const u=ctrl.tasks.reduce((a,x)=>a+x.mod.unans(x.task),0);
+ const notDone=ctrl.tasks.map((x,k)=>x.mod.unans(x.task)?k+1:0).filter(Boolean);
+ const txt=u>0?`Не заполнено ответов: ${u} (задания: ${notDone.join(', ')}).\nНезаполненные ответы считаются неверными.\n\nОтправить работу учителю? Изменить ответы потом будет нельзя.`
+  :'Отправить работу учителю?\nИзменить ответы потом будет нельзя.';
+ if(!ask(txt))return;
+ ctrl.res=ctrl.tasks.map(x=>{const r=x.mod.check(x.task),pts=x.plan.pts;
+  return {title:x.mod.title,score:Math.round(pts*r.ok/r.tot*2)/2,total:pts,ok:r.ok,tot:r.tot};});
+ lockInputs();showResults();
+}
+function showResults(){
+ const sc=ctrl.res.reduce((a,r)=>a+r.score,0),tot=ctrl.res.reduce((a,r)=>a+r.total,0),g=Math.round(10*sc/tot);
+ closeOut();ctrl.sc=sc;ctrl.tot=tot;ctrl.grade=g;ctrl.done=true;ctrl.end=Date.now();ctrl.fio=fio();ctrl.cls=cls();cur=null;
+ P.controls.push({id:ctrl.id,start:ctrl.start,end:ctrl.end,sc,tot,grade:g,res:ctrl.res,leaves:ctrl.leaves,away:ctrl.away,log:ctrl.log});persist();
+ const main=$('main');main.innerHTML='';
+ main.appendChild(h('h2','','Результат контрольной работы'));
+ main.appendChild(h('div','',`<b>${esc(fio())}</b>, ${esc(cls())} класс`));
+ main.appendChild(h('table','res','<tr><th>Задание</th><th>Верных ответов</th><th>Баллы</th></tr>'+ctrl.res.map(r=>`<tr><td>${r.title}</td><td>${r.ok} из ${r.tot}</td><td>${fmt(r.score)} из ${r.total}</td></tr>`).join('')+`<tr><th>Итого</th><th></th><th>${fmt(sc)} из ${tot}</th></tr>`));
+ main.appendChild(h('div','grade',`Оценка: <b>${g}</b> из 10`));
+ main.appendChild(h('div','',ctrl.leaves?`<span style="color:#92400e">Уходов со страницы во время работы: <b>${ctrl.leaves}</b>, время вне окна: <b>${fmtDur(ctrl.away)}</b><br><span class="small">${ctrl.log.join('; ')}</span></span>`:'Со страницы во время работы не уходил(а).'));
+ const st=h('div','msg','');st.id='sendst';st.style.margin='12px 0 0';main.appendChild(st);
+ const bt=h('div','btns');bt.style.marginTop='14px';
+ const sv=h('button','btn','Сохранить результат (.txt)');sv.onclick=exportControl;bt.appendChild(sv);
+ const rs=h('button','btn sec','Отправить ещё раз');rs.id='resend';rs.style.display='none';rs.onclick=sendResult;bt.appendChild(rs);
+ const nw=h('button','btn sec','Следующий ученик');nw.onclick=logout;bt.appendChild(nw);
+ const mn=h('button','btn sec','В меню');mn.onclick=showMenu;bt.appendChild(mn);
+ main.appendChild(bt);window._last=ctrl;
+ sendResult();
+}
+/* ===== вход ученика, сохранение, отправка на Google Диск ===== */
+const studentKey=(f,c)=>(c+'|'+f).toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
+const fileName=(f,c)=>studentKey(f,c).replace(/\|/g,'_').replace(/[\\\/:*?"<>|]+/g,'').replace(/\s+/g,'_')+'.json';
+const newP=()=>({v:2,mods:{},controls:[],updated:Date.now()});
+function hasProgress(p){return !!p&&((p.controls||[]).length>0||Object.values(p.mods||{}).some(vs=>Object.values(vs).some(e=>e.chk||e.built||e.a.some(x=>x!=null))));}
+function mergeP(a,b){   /* объединение сохранений с компьютера и с Диска: для каждого раздела берётся более свежая запись */
+ if(!a)return b;if(!b)return a;
+ const o=JSON.parse(JSON.stringify(a));o.mods=o.mods||{};o.controls=o.controls||[];
+ for(const id in (b.mods||{}))for(const v in b.mods[id]){const e=b.mods[id][v],cu=o.mods[id]&&o.mods[id][v];if(!cu||(e.t||0)>(cu.t||0))(o.mods[id]=o.mods[id]||{})[v]=e;}
+ (b.controls||[]).forEach(c=>{if(!o.controls.some(x=>x.id===c.id))o.controls.push(c);});
+ o.updated=Math.max(a.updated||0,b.updated||0);return o;
+}
+async function fetchRemote(f,c){   // объект — найдено, null — на Диске ещё нет, undefined — нет связи
+ try{
+  const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),10000);
+  const r=await fetch(GOOGLE_DRIVE_URL+'?file='+encodeURIComponent(fileName(f,c)),{signal:ctl.signal});clearTimeout(tm);
+  const j=await r.json();return j.found?j.state:null;
+ }catch(e){return undefined;}
+}
+async function login(){
+ const f=fio(),c=cls();
+ if(!f||!c){alert('Введите фамилию и имя и выберите класс.');(f?$('#cls'):$('#fio')).focus();return;}
+ const key=studentKey(f,c),go=$('#go');go.disabled=true;go.textContent='Загрузка…';
+ let local=null;try{local=JSON.parse(localStorage.getItem(LS+key)||'null');}catch(e){}
+ let remote=null;
+ if(GOOGLE_DRIVE_URL)remote=await fetchRemote(f,c);
+ go.disabled=false;go.textContent='Начать / Продолжить';
+ student={key,fio:f,cls:c};
+ P=mergeP(local,remote||null)||newP();
+ loginNote=hasProgress(P)?`С возвращением, <b>${esc(f)}</b>! Ваши прежние ответы загружены — можно продолжить.`:`Здравствуйте, <b>${esc(f)}</b>! Выберите раздел.`;
+ if(GOOGLE_DRIVE_URL&&remote===undefined)loginNote+='<br><span class="small">Не удалось связаться с Google Диском: работа сохраняется на этом компьютере и отправится позже.</span>';
+ setWhoLocked(true);persist();showMenu();
+}
+function logout(){persist();student=null;P=null;loginNote='';$('#fio').value='';$('#cls').value='';setWhoLocked(false);showMenu();$('#fio').focus();}
+function buildSummary(){
+ const o={};
+ VARIANTS.forEach(v=>{let ok=0,tot=0;
+  MODULES.forEach(m=>{const e=P.mods[m.id]&&P.mods[m.id][v.id];o[`${v.title} · ${m.title}`]=e&&e.chk?`${e.chk.ok} из ${e.chk.tot}`:'';if(e&&e.chk){ok+=e.chk.ok;tot+=e.chk.tot;}});
+  o[`${v.title} · итого`]=tot?`${ok} из ${tot}`:'';});
+ const c=P.controls[P.controls.length-1];
+ o['Контрольная · оценка (из 10)']=c?c.grade:'';o['Контрольная · уходов со страницы']=c?c.leaves:'';
+ return o;
+}
+function payload(final){
+ return {app:'truth_tables',ver:2,key:student.key,file:fileName(student.fio,student.cls),fio:student.fio,cls:student.cls,final:!!final,
+  sent:new Date().toLocaleString('ru-RU'),summary:buildSummary(),state:P};
+}
+const POSTH={'Content-Type':'text/plain;charset=utf-8'};
+/* отправка на Диск; на сервере запись перезаписывается, поэтому повторная отправка безопасна */
+async function syncNow(final){
+ if(!student||!P)return {ok:false,reason:'nostudent'};
+ persist();
+ if(!GOOGLE_DRIVE_URL)return {ok:false,reason:'nourl'};
+ if(!final&&!hasProgress(P))return {ok:true,skipped:true};
+ const body=JSON.stringify(payload(final));
+ try{
+  const r=await fetch(GOOGLE_DRIVE_URL,{method:'POST',headers:POSTH,body});
+  const j=await r.json();
+  if(j.ok){dirty=false;return {ok:true};}
+  return {ok:false,reason:'server',error:j.error};
+ }catch(e){
+  try{await fetch(GOOGLE_DRIVE_URL,{method:'POST',mode:'no-cors',headers:POSTH,body});dirty=false;return {ok:true};}
+  catch(e2){return {ok:false,reason:'net'};}
+ }
+}
+/* при закрытии страницы: сохранить и отправить */
+function sendOnClose(){
+ if(!student||!P)return;
+ persist();
+ if(!GOOGLE_DRIVE_URL||!hasProgress(P))return;
+ const body=JSON.stringify(payload(false));
+ try{fetch(GOOGLE_DRIVE_URL,{method:'POST',mode:'no-cors',keepalive:true,headers:POSTH,body});}
+ catch(e){try{navigator.sendBeacon(GOOGLE_DRIVE_URL,new Blob([body],{type:'text/plain;charset=utf-8'}));}catch(e2){}}
+}
+window.addEventListener('pagehide',sendOnClose);
+setInterval(()=>{if(dirty&&student&&GOOGLE_DRIVE_URL&&!inControl())syncNow(false);},120000);
+/* результат контрольной */
+async function sendResult(){
+ const st=$('#sendst'),rs=$('#resend');if(rs)rs.style.display='none';
+ if(!GOOGLE_DRIVE_URL){if(st)st.innerHTML='<span class="small">Адрес Google Диска не задан — результат сохранён на этом компьютере, его можно сохранить в файл.</span>';return;}
+ if(st)st.innerHTML='Отправка результата…';
+ const r=await syncNow(false);
+ if(r.ok){if(st)st.innerHTML='<b style="color:#15803d">✓ Результат отправлен учителю.</b>';}
+ else{if(st)st.innerHTML='<b style="color:#92400e">Не удалось отправить результат (нет интернета?).</b> Нажмите «Отправить ещё раз» или сохраните файл.';if(rs)rs.style.display='';}
+}
+/* кнопка «Завершить работу» */
+function finishWork(){
+ if(!student)return;
+ if(!confirm('Завершить работу?\n\nВсе ваши результаты будут отправлены учителю на Google Диск. При следующем входе под своим именем вы сможете продолжить с того же места.'))return;
+ runFinish();
+}
+async function runFinish(){
+ persist();
+ const main=$('main');main.innerHTML='';
+ main.appendChild(h('h2','','Завершение работы'));
+ const st=h('div','banner','Отправка результатов…');main.appendChild(st);
+ const bt=h('div','btns');main.appendChild(bt);
+ const r=await syncNow(true);
+ const add=(t,cls,fn)=>{const b=h('button','btn'+(cls?' '+cls:''),t);b.onclick=fn;bt.appendChild(b);};
+ if(r.ok){
+  st.innerHTML='<b style="color:#15803d">✓ Результаты отправлены учителю.</b><br>Страницу можно закрывать. В следующий раз войдите под своим именем — ответы сохранены, и вы продолжите с того же места.';
+  add('Следующий ученик','',logout);add('В меню','sec',showMenu);
+ }else{
+  st.innerHTML=r.reason==='nourl'?'<b style="color:#92400e">Адрес Google Диска в программе не задан.</b><br>Результаты сохранены на этом компьютере. Сообщите об этом учителю или сохраните результаты в файл.'
+   :'<b style="color:#92400e">Не удалось отправить результаты (нет интернета?).</b><br>Они сохранены на этом компьютере. Проверьте соединение и повторите отправку.';
+  if(r.reason!=='nourl')add('Повторить отправку','',runFinish);
+  add('Сохранить в файл (.txt)','sec',exportTraining);add('В меню','sec',showMenu);
+ }
+}
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fname(kind){const d=new Date();const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;return `Таблицы_${kind}_${(fio()||'ученик').replace(/[\\/:*?"<>|]+/g,'').replace(/\s+/g,'_')}_${cls()}_${ds}.txt`;}
+function download(text,name){const b=new Blob(['﻿'+text],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);}
+function exportControl(){
+ const c=window._last;
+ const lines=['Тренажёр «Таблицы истинности» — контрольная работа',`Ученик: ${fio()}`,`Класс: ${cls()}`,`Дата: ${new Date().toLocaleString('ru-RU')}`,'',
+  ...c.res.map(r=>`${r.title}: верных ответов ${r.ok} из ${r.tot}, баллы ${fmt(r.score)} из ${r.total}`),'',`Итого: ${fmt(c.sc)} из ${c.tot}`,`Оценка: ${c.grade} из 10`,`Уходов со страницы во время работы: ${c.leaves}`,`Время вне окна: ${fmtDur(c.away)}`,...(c.log.length?[`Уходы (время выхода и длительность): ${c.log.join('; ')}`]:[])];
+ download(lines.join('\r\n'),fname('контроль'));
+}
+function exportTraining(){
+ if(!student){alert('Введите фамилию и имя вверху страницы.');return;}
+ persist();
+ const lines=['Тренажёр «Таблицы истинности» — результаты',`Ученик: ${fio()}`,`Класс: ${cls()}`,`Дата: ${new Date().toLocaleString('ru-RU')}`,''];
+ VARIANTS.forEach(v=>{lines.push(v.title+':');MODULES.forEach(m=>{const e=P.mods[m.id]&&P.mods[m.id][v.id];
+  lines.push('  '+m.title+': '+(e&&e.chk?`верно ${e.chk.ok} из ${e.chk.tot}`:(e&&e.a.some(x=>x!=null)?'начато, не проверено':'не решали')));});lines.push('');});
+ P.controls.forEach((c,i)=>lines.push(`Контрольная работа ${i+1}: оценка ${c.grade} из 10 (баллы ${fmt(c.sc)} из ${c.tot}), уходов со страницы: ${c.leaves}`));
+ download(lines.join('\r\n'),fname('результаты'));
+}
+/* ===== справка ===== */
+function buildHelp(){
+ const ex=parse('¬A∧(B∨C)');assignIds(ex,0);const nt={s:NOTA_STD};const cols=analyze(ex,nt);const vars=['A','B','C'],E=envs(vars);
+ const exTable='<table class="tt"><tr>'+vars.map(v=>`<th class="var">${v}</th>`).join('')+cols.map((c,i)=>`<th class="${i===0?'sep ':''}${i===cols.length-1?'res':''}">${c.html}</th>`).join('')+'</tr>'+
+  E.map(en=>'<tr>'+vars.map(v=>`<td>${en[v]}</td>`).join('')+cols.map((c,i)=>`<td class="${i===0?'sep ':''}${i===cols.length-1?'res':''}">${ev(c.node,en)}</td>`).join('')+'</tr>').join('')+'</table>';
+ const opTables=['not',...BIN].map(op=>{
+  if(op==='not')return '<div class="hcard"><b>Инверсия ¬A</b><table class="tt"><tr><th>A</th><th>¬A</th></tr><tr><td>0</td><td>1</td></tr><tr><td>1</td><td>0</td></tr></table></div>';
+  return `<div class="hcard"><b>${OPS[op].name[0].toUpperCase()+OPS[op].name.slice(1)}</b><table class="tt"><tr><th>A</th><th>B</th><th>A ${NOTA_STD[op]} B</th></tr>`+[[0,0],[0,1],[1,0],[1,1]].map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${OPS[op].f(r[0],r[1])}</td></tr>`).join('')+'</table></div>';
+ }).join('');
+ $('#hbox').innerHTML='<button class="btn sec hclose" onclick="closeHelp()">Закрыть ✕</button><h2>Справка: построение таблиц истинности</h2>'+
+ '<p><b>Таблица истинности</b> — это таблица, в левой части которой записываются все наборы значений переменных, а в правой — соответствующие значения логического выражения (и промежуточных операций).</p>'+
+ '<h3>Алгоритм построения</h3><ol>'+
+ '<li>Определить количество переменных <i>n</i>.</li>'+
+ '<li>Определить количество логических операций и порядок их выполнения.</li>'+
+ '<li>Количество столбцов = количество переменных + количество операций.</li>'+
+ '<li>Количество строк = 2<sup><i>n</i></sup> — это количество наборов значений переменных (строку заголовка в это число не включаем).</li>'+
+ '<li>Заполнить наборы значений переменных в порядке двоичного счёта.</li>'+
+ '<li>Заполнить столбцы операций в порядке их выполнения, пользуясь таблицами истинности основных операций.</li></ol>'+
+ '<h3>Как не пропустить ни одного набора</h3><p>Наборы — это числа 0, 1, 2, 3, … записанные в двоичной системе счисления. Для двух переменных: 00, 01, 10, 11 (числа 0–3). Для трёх переменных: 000, 001, 010, 011, 100, 101, 110, 111 (числа 0–7).</p>'+
+ '<p>Подсказка: в последнем столбце переменных значения чередуются через одно (0, 1, 0, 1…), в предпоследнем — через два (0, 0, 1, 1…), в первом из трёх — через четыре.</p>'+
+ '<p>Наборы можно записать и в другом порядке — главное, чтобы были все наборы и ни один не повторялся. Но двоичный счёт помогает не ошибиться.</p>'+
+ '<h3>Пример: F = <span class="f">¬A ∧ (B ∨ C)</span></h3>'+
+ '<p>Переменные: A, B, C — всего 3. Операции: ¬A, B ∨ C, ¬A ∧ (B ∨ C) — всего 3. Столбцов: 3 + 3 = 6. Строк (наборов): 2<sup>3</sup> = 8.</p><div class="twrap">'+exTable+'</div>'+
+ '<h3>Порядок выполнения операций</h3><ol><li>действия в скобках;</li><li>инверсия <span class="f">¬</span>;</li><li>конъюнкция <span class="f">∧</span>;</li><li>дизъюнкция <span class="f">∨</span> и исключающее ИЛИ <span class="f">⊕</span>;</li><li>импликация <span class="f">→</span>;</li><li>эквивалентность <span class="f">↔</span>.</li></ol>'+
+ '<h3>Обозначения операций</h3><p>В заданиях чаще всего используется основная запись, но иногда встречаются и другие — их тоже надо узнавать.</p>'+
+ '<table class="nota f"><tr><th>Операция</th><th>Основная запись</th><th>Другие записи</th></tr>'+
+ '<tr><td>инверсия</td><td>¬A</td><td><span class="ov">A</span></td></tr>'+
+ '<tr><td>конъюнкция</td><td>A ∧ B</td><td>A &amp; B, &nbsp;A · B</td></tr>'+
+ '<tr><td>дизъюнкция</td><td>A ∨ B</td><td>A + B</td></tr>'+
+ '<tr><td>исключающее ИЛИ</td><td>A ⊕ B</td><td>—</td></tr>'+
+ '<tr><td>импликация</td><td>A → B</td><td>A ⇒ B</td></tr>'+
+ '<tr><td>эквивалентность</td><td>A ↔ B</td><td>A ≡ B, &nbsp;A ⇔ B</td></tr></table>'+
+ '<h3>Таблицы истинности операций</h3><div class="hgrid">'+opTables+'</div>'+
+ '<h3>Равносильные выражения</h3><p>Выражения называются <b>равносильными</b>, если их таблицы истинности совпадают (на всех наборах значения одинаковые). Например, <span class="f">A → B</span> и <span class="f">¬A ∨ B</span>.</p>';
+}
+function openHelp(){if(inControl())return;$('#help').classList.add('show');$('#help').scrollTop=0;}
+function closeHelp(){$('#help').classList.remove('show');}
+$('#help').addEventListener('click',e=>{if(e.target.id==='help')closeHelp();});
+$('#go').onclick=login;
+$('#fio').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+buildHelp();showMenu();
+</script>
+</body>
+</html>
